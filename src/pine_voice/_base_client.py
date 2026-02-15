@@ -61,11 +61,12 @@ def build_call_body(
     context: str,
     objective: str,
     instructions: Optional[str] = None,
+    caller: Optional[str] = None,
     voice: Optional[str] = None,
     max_duration_minutes: Optional[int] = None,
 ) -> Dict[str, Any]:
     """Map SDK parameters to wire-format JSON body."""
-    return {
+    body: Dict[str, Any] = {
         "dialed_number": to,
         "callee_name": name,
         "callee_context": context,
@@ -74,6 +75,9 @@ def build_call_body(
         "voice": voice,
         "max_duration_minutes": max_duration_minutes if max_duration_minutes is not None else 120,
     }
+    if caller is not None:
+        body["caller"] = caller
+    return body
 
 
 def parse_call_initiated(data: Optional[Dict[str, Any]]) -> CallInitiated:

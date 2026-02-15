@@ -98,6 +98,7 @@ call = client.calls.create(
         "Ask how long the service will take so I know when to pick up the car. "
         "Confirm the appointment date, time, services, and estimated cost before hanging up."
     ),
+    caller="communicator",
     voice="female",
     max_duration_minutes=10,
 )
@@ -202,6 +203,17 @@ Verify the code. Returns `Credentials(access_token, user_id)`.
 ### `client.calls.create(...) -> CallInitiated`
 
 Initiate a call. Returns `CallInitiated(call_id, status)`.
+
+| Param | Type | Required | Description |
+|---|---|---|---|
+| `to` | `str` | Yes | Phone number in E.164 format |
+| `name` | `str` | Yes | Name of the person or business being called |
+| `context` | `str` | Yes | Background context about the callee and info needed during the call |
+| `objective` | `str` | Yes | Specific goal the call should accomplish |
+| `instructions` | `str` | No | Detailed strategy and instructions for the voice agent |
+| `caller` | `str` | No | `"negotiator"` for complex negotiations (requires thorough strategy in context/instructions). `"communicator"` for general tasks. Default: `"negotiator"` |
+| `voice` | `str` | No | `"male"` or `"female"`. Default: `"female"` |
+| `max_duration_minutes` | `int` | No | Max call duration in minutes (1-120). Default: 120 |
 
 ### `client.calls.get(call_id) -> CallStatus | CallResult`
 

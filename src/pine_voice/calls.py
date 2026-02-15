@@ -37,6 +37,7 @@ class CallsAPI:
         context: str,
         objective: str,
         instructions: Optional[str] = None,
+        caller: Optional[str] = None,
         voice: Optional[str] = None,
         max_duration_minutes: Optional[int] = None,
     ) -> CallInitiated:
@@ -50,6 +51,7 @@ class CallsAPI:
             context=context,
             objective=objective,
             instructions=instructions,
+            caller=caller,
             voice=voice,
             max_duration_minutes=max_duration_minutes,
         )
@@ -83,6 +85,7 @@ class CallsAPI:
         context: str,
         objective: str,
         instructions: Optional[str] = None,
+        caller: Optional[str] = None,
         voice: Optional[str] = None,
         max_duration_minutes: Optional[int] = None,
         poll_interval: int = DEFAULT_POLL_INTERVAL,
@@ -101,6 +104,7 @@ class CallsAPI:
             context=context,
             objective=objective,
             instructions=instructions,
+            caller=caller,
             voice=voice,
             max_duration_minutes=max_duration_minutes,
         )
@@ -127,6 +131,7 @@ class AsyncCallsAPI:
         context: str,
         objective: str,
         instructions: Optional[str] = None,
+        caller: Optional[str] = None,
         voice: Optional[str] = None,
         max_duration_minutes: Optional[int] = None,
     ) -> CallInitiated:
@@ -140,6 +145,7 @@ class AsyncCallsAPI:
             context=context,
             objective=objective,
             instructions=instructions,
+            caller=caller,
             voice=voice,
             max_duration_minutes=max_duration_minutes,
         )
@@ -173,6 +179,7 @@ class AsyncCallsAPI:
         context: str,
         objective: str,
         instructions: Optional[str] = None,
+        caller: Optional[str] = None,
         voice: Optional[str] = None,
         max_duration_minutes: Optional[int] = None,
         poll_interval: int = DEFAULT_POLL_INTERVAL,
@@ -191,6 +198,7 @@ class AsyncCallsAPI:
             context=context,
             objective=objective,
             instructions=instructions,
+            caller=caller,
             voice=voice,
             max_duration_minutes=max_duration_minutes,
         )
