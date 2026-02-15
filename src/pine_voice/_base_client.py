@@ -6,10 +6,38 @@ import os
 from typing import Any, Dict, List, Optional
 
 from .exceptions import AuthError, PineVoiceError, raise_api_error
-from .types import CallInitiated, CallProgress, CallResult, CallStatus, TranscriptEntry, TranscriptTurn
+from .types import CallInitiated, CallResult, CallStatus, TranscriptEntry
 
 DEFAULT_GATEWAY_URL = "https://agent3-api-gateway-staging.19pine.ai"
 TERMINAL_STATUSES = frozenset({"completed", "failed", "cancelled"})
+
+
+_STATUS_MAP: Dict[str, str] = {
+    "completed": "completed",
+    "Completed": "completed",
+    "HungupByPeer": "completed",
+    "HungupByLocal": "completed",
+    "Timeout": "completed",
+    "TooLongSilence": "completed",
+    "failed": "failed",
+    "Failed": "failed",
+    "InternalError": "failed",
+    "DialFailed": "failed",
+    "NoAnswer": "failed",
+    "Declined": "failed",
+    "cancelled": "cancelled",
+    "Cancelled": "cancelled",
+}
+
+
+def normalize_status(raw: str) -> str:
+    """Normalize a raw API call status to a canonical SDK status.
+
+    The v2 REST API returns raw statuses (e.g. "HungupByPeer", "Completed",
+    "DialFailed") while the SDK uses a smaller canonical set:
+    "completed" | "failed" | "cancelled" | "in_progress"
+    """
+    return _STATUS_MAP.get(raw, raw)
 
 
 def _env_fallback(explicit: Optional[str], env_var: str) -> Optional[str]:
@@ -94,7 +122,7 @@ def parse_call_response(data: Optional[Dict[str, Any]]) -> CallStatus | CallResu
     """Parse API response into CallStatus or CallResult."""
     if not data:
         raise PineVoiceError("EMPTY_RESPONSE", "Server returned an empty or invalid response", 200)
-    status = data.get("status", "")
+    status = normalize_status(data.get("status", ""))
 
     if status in TERMINAL_STATUSES:
         transcript_raw: List[Dict[str, str]] = data.get("transcript") or []
@@ -111,20 +139,10 @@ def parse_call_response(data: Optional[Dict[str, Any]]) -> CallStatus | CallResu
             credits_charged=data.get("credits_charged", 0),
         )
 
-    partial_raw: Optional[List[Dict[str, str]]] = data.get("partial_transcript")
-    partial_transcript: Optional[List[TranscriptTurn]] = None
-    if partial_raw is not None:
-        partial_transcript = [
-            TranscriptTurn(speaker=t.get("speaker", ""), text=t.get("text", ""))
-            for t in partial_raw
-        ]
-
     return CallStatus(
         call_id=data.get("call_id", ""),
         status=status,
         duration_seconds=data.get("duration_seconds"),
-        phase=data.get("phase"),
-        partial_transcript=partial_transcript,
     )
 
 

@@ -31,40 +31,28 @@ class TranscriptEntry:
 
 
 @dataclass
-class TranscriptTurn:
-    """A single speaker turn in a transcript."""
-
-    speaker: str
-    text: str
-
-
-@dataclass
 class CallStatus:
-    """Returned when polling a call that may still be in progress."""
+    """Returned when polling a call that is still in progress."""
 
     call_id: str
-    status: str  # "initiated" | "in_progress" | "completed" | "failed" | "cancelled"
+    status: str  # "in_progress"
     duration_seconds: Optional[int] = None
-    phase: Optional[str] = None
-    partial_transcript: Optional[List[TranscriptTurn]] = None
 
 
 @dataclass
 class CallProgress:
     """Call progress snapshot (non-terminal state).
 
-    Note: Real-time intermediate updates (partial transcripts, phase changes
-    like "connected") are NOT currently available. The server does not provide
-    real-time call progress events. The SSE stream delivers only the final
-    result after call completion. During polling fallback, progress callbacks
-    will fire with basic status information but no partial transcript data.
+    Note: Real-time intermediate updates are NOT currently available.
+    The server does not provide real-time call progress events. The SSE
+    stream delivers only the final result after call completion. During
+    polling fallback, progress callbacks will fire with basic status
+    information only.
     """
 
     call_id: str
     status: str
-    phase: Optional[str] = None
     duration_seconds: Optional[int] = None
-    partial_transcript: Optional[List[TranscriptTurn]] = None
 
 
 @dataclass

@@ -18,7 +18,7 @@ from ._base_client import (
     parse_call_initiated,
     parse_call_response,
 )
-from .types import CallInitiated, CallProgress, CallResult, CallStatus, TranscriptTurn
+from .types import CallInitiated, CallProgress, CallResult, CallStatus
 
 DEFAULT_POLL_INTERVAL = 10  # seconds
 _MAX_SSE_RECONNECTS = 1
@@ -58,19 +58,10 @@ def _result_from_sse_data(raw: str) -> CallResult:
 def _progress_from_sse_data(raw: str) -> CallProgress:
     """Deserialize an SSE data payload into a CallProgress object."""
     data: Dict[str, Any] = json.loads(raw)
-    partial_raw: Optional[List[Dict[str, str]]] = data.get("partial_transcript")
-    partial_transcript: Optional[List[TranscriptTurn]] = None
-    if partial_raw is not None:
-        partial_transcript = [
-            TranscriptTurn(speaker=t.get("speaker", ""), text=t.get("text", ""))
-            for t in partial_raw
-        ]
     return CallProgress(
         call_id=data.get("call_id", ""),
         status=data.get("status", ""),
-        phase=data.get("phase"),
         duration_seconds=data.get("duration_seconds"),
-        partial_transcript=partial_transcript,
     )
 
 
@@ -79,9 +70,7 @@ def _progress_from_call_status(cs: CallStatus) -> CallProgress:
     return CallProgress(
         call_id=cs.call_id,
         status=cs.status,
-        phase=cs.phase,
         duration_seconds=cs.duration_seconds,
-        partial_transcript=cs.partial_transcript,
     )
 
 

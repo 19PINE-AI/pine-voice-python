@@ -12,7 +12,6 @@ from .types import (
     CallStatus,
     Credentials,
     TranscriptEntry,
-    TranscriptTurn,
 )
 
 __all__ = [
@@ -29,5 +28,4 @@ __all__ = [
     "CallProgress",
     "CallResult",
     "TranscriptEntry",
-    "TranscriptTurn",
 ]
