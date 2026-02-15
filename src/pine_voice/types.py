@@ -65,9 +65,8 @@ class CallResult:
     """Returned when a call reaches a terminal state."""
 
     call_id: str
-    status: str  # "completed" | "failed" | "cancelled"
+    status: str
     duration_seconds: int = 0
     summary: str = ""
     transcript: List[TranscriptEntry] = field(default_factory=list)
-    triage_category: str = ""  # "successful" | "partially_successful" | "unsuccessful" | "no_contact"
     credits_charged: int = 0

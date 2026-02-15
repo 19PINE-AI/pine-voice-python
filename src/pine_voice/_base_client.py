@@ -108,7 +108,6 @@ def parse_call_response(data: Optional[Dict[str, Any]]) -> CallStatus | CallResu
             duration_seconds=data.get("duration_seconds", 0),
             summary=data.get("summary", ""),
             transcript=transcript,
-            triage_category=data.get("triage_category", ""),
             credits_charged=data.get("credits_charged", 0),
         )
 

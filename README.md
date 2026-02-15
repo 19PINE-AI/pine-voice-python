@@ -33,7 +33,6 @@ result = client.calls.create_and_wait(
 )
 
 print(result.transcript)
-print(result.triage_category)
 ```
 
 ## Authentication
@@ -133,7 +132,6 @@ result = client.calls.create_and_wait(
 print(result.status)          # "completed" | "failed" | "cancelled"
 print(result.transcript)      # full conversation
 print(result.summary)         # LLM summary (empty unless enable_summary=True)
-print(result.triage_category) # "successful" | "partially_successful" | ...
 print(result.credits_charged) # credits used
 ```
 
