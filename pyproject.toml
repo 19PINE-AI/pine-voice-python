@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "pine-voice"
-version = "0.1.1"
+version = "0.1.2"
 description = "Official Pine AI Voice SDK — make phone calls via Pine's AI voice agent"
 readme = "README.md"
 license = "MIT"

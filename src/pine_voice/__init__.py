@@ -1,6 +1,6 @@
 """Pine Voice SDK — official Python client for Pine AI voice calls."""
 
-__version__ = "0.1.1"
+__version__ = "0.1.2"
 
 from .async_client import AsyncPineVoice
 from .client import PineVoice
