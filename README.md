@@ -1,6 +1,6 @@
 # Pine Voice SDK for Python
 
-Official SDK for [Pine AI](https://pine.ai) voice calls. Make phone calls via Pine's AI voice agent from any Python application — no MCP client or OpenClaw required.
+Official SDK for [Pine AI](https://19pine.ai) voice calls. Make phone calls via Pine's AI voice agent from any Python application — no MCP client or OpenClaw required.
 
 Supports both **synchronous** and **asynchronous** usage.
 
@@ -249,7 +249,7 @@ Calls to numbers outside these country codes will be rejected with a `POLICY_VIO
 ## Requirements
 
 - Python 3.9+
-- Pine AI Pro subscription ([pine.ai](https://pine.ai))
+- Pine AI Pro subscription ([19pine.ai](https://19pine.ai))
 
 ## License
 
