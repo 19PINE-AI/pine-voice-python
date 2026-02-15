@@ -162,15 +162,24 @@ class CallsAPI:
     ) -> CallResult:
         """Initiate a call and block until it reaches a terminal state.
 
-        Automatically uses SSE for real-time delivery, falling back to
-        polling if SSE is unavailable or the connection drops.
+        Uses SSE to wait for the final result, falling back to polling
+        if SSE is unavailable or the connection drops. The call is
+        fire-and-wait: you initiate it and receive the complete transcript
+        once the call finishes (delivered via the webhook).
+
+        Note: Real-time intermediate updates (partial transcripts, "call
+        connected" phase changes) are NOT currently available. The server
+        does not provide real-time call progress events. The SSE stream
+        delivers only the final transcript after call completion.
 
         Args:
             enable_summary: Request an LLM-generated summary after the call (default False).
             poll_interval: Seconds between status checks for polling fallback (default 10).
-            use_sse: Try SSE streaming first (default True). Set False to force polling.
+            use_sse: Try SSE first (default True). Set False to force polling.
             on_progress: Optional callback invoked with a :class:`~pine_voice.types.CallProgress`
-                whenever the call phase changes or a new transcript turn arrives.
+                after each poll cycle during polling fallback. Note: real-time progress
+                events are not currently available; this callback provides only basic
+                status information during polling.
 
         Returns:
             The completed :class:`~pine_voice.types.CallResult`.
@@ -272,6 +281,9 @@ class CallsAPI:
                         event_type = event.get("event")
                         if event_type == "result" and "data" in event:
                             return _result_from_sse_data(event["data"]), last_event_id
+                        # NOTE: "status" and "transcript" intermediate events are NOT
+                        # currently emitted by the server. This handler is preserved for
+                        # forward compatibility if they are added in the future.
                         if event_type in ("status", "transcript") and "data" in event and on_progress is not None:
                             on_progress(_progress_from_sse_data(event["data"]))
         return None, last_event_id
@@ -354,15 +366,24 @@ class AsyncCallsAPI:
     ) -> CallResult:
         """Initiate a call and await until it reaches a terminal state.
 
-        Automatically uses SSE for real-time delivery, falling back to
-        polling if SSE is unavailable or the connection drops.
+        Uses SSE to wait for the final result, falling back to polling
+        if SSE is unavailable or the connection drops. The call is
+        fire-and-wait: you initiate it and receive the complete transcript
+        once the call finishes (delivered via the webhook).
+
+        Note: Real-time intermediate updates (partial transcripts, "call
+        connected" phase changes) are NOT currently available. The server
+        does not provide real-time call progress events. The SSE stream
+        delivers only the final transcript after call completion.
 
         Args:
             enable_summary: Request an LLM-generated summary after the call (default False).
             poll_interval: Seconds between status checks for polling fallback (default 10).
-            use_sse: Try SSE streaming first (default True). Set False to force polling.
+            use_sse: Try SSE first (default True). Set False to force polling.
             on_progress: Optional callback invoked with a :class:`~pine_voice.types.CallProgress`
-                whenever the call phase changes or a new transcript turn arrives.
+                after each poll cycle during polling fallback. Note: real-time progress
+                events are not currently available; this callback provides only basic
+                status information during polling.
 
         Returns:
             The completed :class:`~pine_voice.types.CallResult`.
@@ -464,6 +485,9 @@ class AsyncCallsAPI:
                         event_type = event.get("event")
                         if event_type == "result" and "data" in event:
                             return _result_from_sse_data(event["data"]), last_event_id
+                        # NOTE: "status" and "transcript" intermediate events are NOT
+                        # currently emitted by the server. This handler is preserved for
+                        # forward compatibility if they are added in the future.
                         if event_type in ("status", "transcript") and "data" in event and on_progress is not None:
                             on_progress(_progress_from_sse_data(event["data"]))
         return None, last_event_id

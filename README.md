@@ -106,7 +106,7 @@ call = client.calls.create(
 status = client.calls.get(call.call_id)
 ```
 
-### Call and wait (SSE streaming with polling fallback)
+### Call and wait (SSE with polling fallback)
 
 ```python
 result = client.calls.create_and_wait(
@@ -124,7 +124,7 @@ result = client.calls.create_and_wait(
         "Mention the nut allergy and ask if they can accommodate it. "
         "Confirm the reservation date, time, party size, and name on the reservation."
     ),
-    # SSE streaming is used by default for real-time delivery.
+    # SSE is used by default to wait for the final result.
     # Falls back to polling if SSE is unavailable.
     poll_interval=10,  # polling fallback interval (default 10s)
 )
@@ -224,13 +224,15 @@ Get call status. Returns `CallResult` if terminal.
 
 Initiate and wait until complete. Returns `CallResult`.
 
-Uses SSE streaming for real-time result delivery. If the SSE connection fails or the server doesn't support it, automatically falls back to polling. Reconnects once on SSE connection drop before falling back.
+Uses SSE to wait for the final call result. If the SSE connection fails or the server doesn't support it, automatically falls back to polling. Reconnects once on SSE connection drop before falling back.
+
+**Important:** Real-time intermediate updates (partial transcripts, "call connected" events) are not currently available. The SSE stream delivers only the final transcript after the call completes. There are no intermediate progress events during the call.
 
 | Extra Param | Type | Default | Description |
 |---|---|---|---|
 | `poll_interval` | `int` | `10` | Seconds between polling requests (fallback only) |
-| `use_sse` | `bool` | `True` | Try SSE streaming first. Set `False` to force polling. |
-| `on_progress` | `Callable[[CallProgress], None]` | `None` | Callback invoked with a `CallProgress` object whenever the call phase changes or a new transcript turn arrives. Only works when SSE streaming is available; during polling fallback, called after each poll cycle. |
+| `use_sse` | `bool` | `True` | Try SSE first. Set `False` to force polling. |
+| `on_progress` | `Callable[[CallProgress], None]` | `None` | Callback invoked with a `CallProgress` object after each poll cycle during polling fallback. Note: real-time progress events are not currently available. |
 
 ## Supported countries
 

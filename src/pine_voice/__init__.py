@@ -1,5 +1,7 @@
 """Pine Voice SDK — official Python client for Pine AI voice calls."""
 
+__version__ = "0.1.0"
+
 from .async_client import AsyncPineVoice
 from .client import PineVoice
 from .exceptions import AuthError, CallError, PineVoiceError, RateLimitError

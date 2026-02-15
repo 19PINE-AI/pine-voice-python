@@ -51,7 +51,14 @@ class CallStatus:
 
 @dataclass
 class CallProgress:
-    """Real-time call progress (non-terminal state)."""
+    """Call progress snapshot (non-terminal state).
+
+    Note: Real-time intermediate updates (partial transcripts, phase changes
+    like "connected") are NOT currently available. The server does not provide
+    real-time call progress events. The SSE stream delivers only the final
+    result after call completion. During polling fallback, progress callbacks
+    will fire with basic status information but no partial transcript data.
+    """
 
     call_id: str
     status: str
