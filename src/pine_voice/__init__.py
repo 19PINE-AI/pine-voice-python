@@ -16,6 +16,7 @@ from .types import (
 )
 
 __all__ = [
+    "__version__",
     "PineVoice",
     "AsyncPineVoice",
     "PineVoiceError",

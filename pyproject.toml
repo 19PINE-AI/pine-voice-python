@@ -27,5 +27,4 @@ dependencies = ["httpx>=0.24.0"]
 
 [project.urls]
 Homepage = "https://pineclaw.com"
-Repository = "https://github.com/pine-ai/pine-voice-python"
 Documentation = "https://pineclaw.com/api.html"
