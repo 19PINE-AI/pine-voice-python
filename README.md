@@ -32,8 +32,8 @@ result = client.calls.create_and_wait(
     ),
 )
 
-print(result.summary)
 print(result.transcript)
+print(result.triage_category)
 ```
 
 ## Authentication
@@ -107,7 +107,7 @@ call = client.calls.create(
 status = client.calls.get(call.call_id)
 ```
 
-### Call and wait
+### Call and wait (SSE streaming with polling fallback)
 
 ```python
 result = client.calls.create_and_wait(
@@ -125,12 +125,14 @@ result = client.calls.create_and_wait(
         "Mention the nut allergy and ask if they can accommodate it. "
         "Confirm the reservation date, time, party size, and name on the reservation."
     ),
-    poll_interval=10,  # check every 10s (default)
+    # SSE streaming is used by default for real-time delivery.
+    # Falls back to polling if SSE is unavailable.
+    poll_interval=10,  # polling fallback interval (default 10s)
 )
 
 print(result.status)          # "completed" | "failed" | "cancelled"
-print(result.summary)         # AI-generated summary
 print(result.transcript)      # full conversation
+print(result.summary)         # LLM summary (empty unless enable_summary=True)
 print(result.triage_category) # "successful" | "partially_successful" | ...
 print(result.credits_charged) # credits used
 ```
@@ -206,7 +208,7 @@ Initiate a call. Returns `CallInitiated(call_id, status)`.
 
 | Param | Type | Required | Description |
 |---|---|---|---|
-| `to` | `str` | Yes | Phone number in E.164 format |
+| `to` | `str` | Yes | Phone number in E.164 format. Supported countries: US/CA (+1), UK (+44), AU (+61), NZ (+64), IE (+353) |
 | `name` | `str` | Yes | Name of the person or business being called |
 | `context` | `str` | Yes | Background context about the callee and info needed during the call |
 | `objective` | `str` | Yes | Specific goal the call should accomplish |
@@ -214,6 +216,7 @@ Initiate a call. Returns `CallInitiated(call_id, status)`.
 | `caller` | `str` | No | `"negotiator"` for complex negotiations (requires thorough strategy in context/instructions). `"communicator"` for general tasks. Default: `"negotiator"` |
 | `voice` | `str` | No | `"male"` or `"female"`. Default: `"female"` |
 | `max_duration_minutes` | `int` | No | Max call duration in minutes (1-120). Default: 120 |
+| `enable_summary` | `bool` | No | Request an LLM-generated summary after the call. Default: `False`. Most AI agents can process the full transcript directly, so the summary is opt-in to save latency and cost. |
 
 ### `client.calls.get(call_id) -> CallStatus | CallResult`
 
@@ -221,7 +224,26 @@ Get call status. Returns `CallResult` if terminal.
 
 ### `client.calls.create_and_wait(...) -> CallResult`
 
-Initiate and poll until complete. Returns `CallResult`.
+Initiate and wait until complete. Returns `CallResult`.
+
+Uses SSE streaming for real-time result delivery. If the SSE connection fails or the server doesn't support it, automatically falls back to polling. Reconnects once on SSE connection drop before falling back.
+
+| Extra Param | Type | Default | Description |
+|---|---|---|---|
+| `poll_interval` | `int` | `10` | Seconds between polling requests (fallback only) |
+| `use_sse` | `bool` | `True` | Try SSE streaming first. Set `False` to force polling. |
+
+## Supported countries
+
+The voice agent can only speak English. Calls can be placed to the following countries:
+
+- US and Canada (+1)
+- United Kingdom (+44)
+- Australia (+61)
+- New Zealand (+64)
+- Ireland (+353)
+
+Calls to numbers outside these country codes will be rejected with a `POLICY_VIOLATION` error.
 
 ## Requirements
 

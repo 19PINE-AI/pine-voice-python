@@ -25,7 +25,7 @@ class AsyncPineVoice(_BasePineVoice):
             context="Local dentist office",
             objective="Schedule a cleaning for Tuesday",
         )
-        print(result.summary)
+        print(result.transcript)
     """
 
     auth = AsyncAuth()
