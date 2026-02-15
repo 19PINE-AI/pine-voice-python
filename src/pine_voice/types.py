@@ -31,12 +31,33 @@ class TranscriptEntry:
 
 
 @dataclass
+class TranscriptTurn:
+    """A single speaker turn in a transcript."""
+
+    speaker: str
+    text: str
+
+
+@dataclass
 class CallStatus:
     """Returned when polling a call that may still be in progress."""
 
     call_id: str
     status: str  # "initiated" | "in_progress" | "completed" | "failed" | "cancelled"
     duration_seconds: Optional[int] = None
+    phase: Optional[str] = None
+    partial_transcript: Optional[List[TranscriptTurn]] = None
+
+
+@dataclass
+class CallProgress:
+    """Real-time call progress (non-terminal state)."""
+
+    call_id: str
+    status: str
+    phase: Optional[str] = None
+    duration_seconds: Optional[int] = None
+    partial_transcript: Optional[List[TranscriptTurn]] = None
 
 
 @dataclass

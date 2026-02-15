@@ -6,7 +6,7 @@ import asyncio
 import json
 import logging
 import time
-from typing import Any, Dict, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 from urllib.parse import quote
 
 import httpx
@@ -18,7 +18,7 @@ from ._base_client import (
     parse_call_initiated,
     parse_call_response,
 )
-from .types import CallInitiated, CallResult, CallStatus
+from .types import CallInitiated, CallProgress, CallResult, CallStatus, TranscriptTurn
 
 DEFAULT_POLL_INTERVAL = 10  # seconds
 _MAX_SSE_RECONNECTS = 1
@@ -53,6 +53,36 @@ def _result_from_sse_data(raw: str) -> CallResult:
     if not isinstance(result, CallResult):
         raise ValueError("SSE result event did not contain a terminal status")
     return result
+
+
+def _progress_from_sse_data(raw: str) -> CallProgress:
+    """Deserialize an SSE data payload into a CallProgress object."""
+    data: Dict[str, Any] = json.loads(raw)
+    partial_raw: Optional[List[Dict[str, str]]] = data.get("partial_transcript")
+    partial_transcript: Optional[List[TranscriptTurn]] = None
+    if partial_raw is not None:
+        partial_transcript = [
+            TranscriptTurn(speaker=t.get("speaker", ""), text=t.get("text", ""))
+            for t in partial_raw
+        ]
+    return CallProgress(
+        call_id=data.get("call_id", ""),
+        status=data.get("status", ""),
+        phase=data.get("phase"),
+        duration_seconds=data.get("duration_seconds"),
+        partial_transcript=partial_transcript,
+    )
+
+
+def _progress_from_call_status(cs: CallStatus) -> CallProgress:
+    """Convert a polled CallStatus into a CallProgress for the callback."""
+    return CallProgress(
+        call_id=cs.call_id,
+        status=cs.status,
+        phase=cs.phase,
+        duration_seconds=cs.duration_seconds,
+        partial_transcript=cs.partial_transcript,
+    )
 
 
 class CallsAPI:
@@ -128,6 +158,7 @@ class CallsAPI:
         enable_summary: bool = False,
         poll_interval: int = DEFAULT_POLL_INTERVAL,
         use_sse: bool = True,
+        on_progress: Optional[Callable[[CallProgress], None]] = None,
     ) -> CallResult:
         """Initiate a call and block until it reaches a terminal state.
 
@@ -138,6 +169,8 @@ class CallsAPI:
             enable_summary: Request an LLM-generated summary after the call (default False).
             poll_interval: Seconds between status checks for polling fallback (default 10).
             use_sse: Try SSE streaming first (default True). Set False to force polling.
+            on_progress: Optional callback invoked with a :class:`~pine_voice.types.CallProgress`
+                whenever the call phase changes or a new transcript turn arrives.
 
         Returns:
             The completed :class:`~pine_voice.types.CallResult`.
@@ -155,20 +188,33 @@ class CallsAPI:
         )
         if use_sse:
             try:
-                return self._stream_until_complete(initiated.call_id)
+                return self._stream_until_complete(initiated.call_id, on_progress=on_progress)
             except Exception:
                 _log.debug("SSE failed for call %s, falling back to polling", initiated.call_id)
-        return self._poll_until_complete(initiated.call_id, poll_interval)
+        return self._poll_until_complete(initiated.call_id, poll_interval, on_progress=on_progress)
 
-    def _poll_until_complete(self, call_id: str, poll_interval: int) -> CallResult:
+    def _poll_until_complete(
+        self,
+        call_id: str,
+        poll_interval: int,
+        *,
+        on_progress: Optional[Callable[[CallProgress], None]] = None,
+    ) -> CallResult:
         """Poll GET endpoint until a terminal status is reached."""
         while True:
             time.sleep(poll_interval)
             result = self.get(call_id)
             if result.status in TERMINAL_STATUSES:
                 return result  # type: ignore[return-value]
+            if on_progress is not None and isinstance(result, CallStatus):
+                on_progress(_progress_from_call_status(result))
 
-    def _stream_until_complete(self, call_id: str) -> CallResult:
+    def _stream_until_complete(
+        self,
+        call_id: str,
+        *,
+        on_progress: Optional[Callable[[CallProgress], None]] = None,
+    ) -> CallResult:
         """Open an SSE stream and wait for the result event.
 
         Reconnects up to ``_MAX_SSE_RECONNECTS`` times on connection drop.
@@ -176,7 +222,7 @@ class CallsAPI:
         last_event_id: Optional[str] = None
         for attempt in range(_MAX_SSE_RECONNECTS + 1):
             try:
-                result, last_event_id = self._sse_connect(call_id, last_event_id)
+                result, last_event_id = self._sse_connect(call_id, last_event_id, on_progress=on_progress)
                 if result is not None:
                     return result
             except (httpx.TransportError, httpx.StreamError) as exc:
@@ -186,7 +232,11 @@ class CallsAPI:
         raise RuntimeError("SSE stream ended without result")
 
     def _sse_connect(
-        self, call_id: str, last_event_id: Optional[str]
+        self,
+        call_id: str,
+        last_event_id: Optional[str],
+        *,
+        on_progress: Optional[Callable[[CallProgress], None]] = None,
     ) -> tuple[Optional[CallResult], Optional[str]]:
         """Single SSE connection attempt.
 
@@ -219,8 +269,11 @@ class CallsAPI:
                         buf.clear()
                         if event.get("id"):
                             last_event_id = event["id"]
-                        if event.get("event") == "result" and "data" in event:
+                        event_type = event.get("event")
+                        if event_type == "result" and "data" in event:
                             return _result_from_sse_data(event["data"]), last_event_id
+                        if event_type in ("status", "transcript") and "data" in event and on_progress is not None:
+                            on_progress(_progress_from_sse_data(event["data"]))
         return None, last_event_id
 
 
@@ -297,6 +350,7 @@ class AsyncCallsAPI:
         enable_summary: bool = False,
         poll_interval: int = DEFAULT_POLL_INTERVAL,
         use_sse: bool = True,
+        on_progress: Optional[Callable[[CallProgress], None]] = None,
     ) -> CallResult:
         """Initiate a call and await until it reaches a terminal state.
 
@@ -307,6 +361,8 @@ class AsyncCallsAPI:
             enable_summary: Request an LLM-generated summary after the call (default False).
             poll_interval: Seconds between status checks for polling fallback (default 10).
             use_sse: Try SSE streaming first (default True). Set False to force polling.
+            on_progress: Optional callback invoked with a :class:`~pine_voice.types.CallProgress`
+                whenever the call phase changes or a new transcript turn arrives.
 
         Returns:
             The completed :class:`~pine_voice.types.CallResult`.
@@ -324,20 +380,33 @@ class AsyncCallsAPI:
         )
         if use_sse:
             try:
-                return await self._stream_until_complete(initiated.call_id)
+                return await self._stream_until_complete(initiated.call_id, on_progress=on_progress)
             except Exception:
                 _log.debug("SSE failed for call %s, falling back to polling", initiated.call_id)
-        return await self._poll_until_complete(initiated.call_id, poll_interval)
+        return await self._poll_until_complete(initiated.call_id, poll_interval, on_progress=on_progress)
 
-    async def _poll_until_complete(self, call_id: str, poll_interval: int) -> CallResult:
+    async def _poll_until_complete(
+        self,
+        call_id: str,
+        poll_interval: int,
+        *,
+        on_progress: Optional[Callable[[CallProgress], None]] = None,
+    ) -> CallResult:
         """Poll GET endpoint until a terminal status is reached."""
         while True:
             await asyncio.sleep(poll_interval)
             result = await self.get(call_id)
             if result.status in TERMINAL_STATUSES:
                 return result  # type: ignore[return-value]
+            if on_progress is not None and isinstance(result, CallStatus):
+                on_progress(_progress_from_call_status(result))
 
-    async def _stream_until_complete(self, call_id: str) -> CallResult:
+    async def _stream_until_complete(
+        self,
+        call_id: str,
+        *,
+        on_progress: Optional[Callable[[CallProgress], None]] = None,
+    ) -> CallResult:
         """Open an SSE stream and wait for the result event.
 
         Reconnects up to ``_MAX_SSE_RECONNECTS`` times on connection drop.
@@ -345,7 +414,7 @@ class AsyncCallsAPI:
         last_event_id: Optional[str] = None
         for attempt in range(_MAX_SSE_RECONNECTS + 1):
             try:
-                result, last_event_id = await self._sse_connect(call_id, last_event_id)
+                result, last_event_id = await self._sse_connect(call_id, last_event_id, on_progress=on_progress)
                 if result is not None:
                     return result
             except (httpx.TransportError, httpx.StreamError) as exc:
@@ -355,7 +424,11 @@ class AsyncCallsAPI:
         raise RuntimeError("SSE stream ended without result")
 
     async def _sse_connect(
-        self, call_id: str, last_event_id: Optional[str]
+        self,
+        call_id: str,
+        last_event_id: Optional[str],
+        *,
+        on_progress: Optional[Callable[[CallProgress], None]] = None,
     ) -> tuple[Optional[CallResult], Optional[str]]:
         """Single async SSE connection attempt.
 
@@ -388,6 +461,9 @@ class AsyncCallsAPI:
                         buf.clear()
                         if event.get("id"):
                             last_event_id = event["id"]
-                        if event.get("event") == "result" and "data" in event:
+                        event_type = event.get("event")
+                        if event_type == "result" and "data" in event:
                             return _result_from_sse_data(event["data"]), last_event_id
+                        if event_type in ("status", "transcript") and "data" in event and on_progress is not None:
+                            on_progress(_progress_from_sse_data(event["data"]))
         return None, last_event_id

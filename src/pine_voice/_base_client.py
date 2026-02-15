@@ -6,7 +6,7 @@ import os
 from typing import Any, Dict, List, Optional
 
 from .exceptions import AuthError, PineVoiceError, raise_api_error
-from .types import CallInitiated, CallResult, CallStatus, TranscriptEntry
+from .types import CallInitiated, CallProgress, CallResult, CallStatus, TranscriptEntry, TranscriptTurn
 
 DEFAULT_GATEWAY_URL = "https://agent3-api-gateway-staging.19pine.ai"
 TERMINAL_STATUSES = frozenset({"completed", "failed", "cancelled"})
@@ -112,10 +112,20 @@ def parse_call_response(data: Optional[Dict[str, Any]]) -> CallStatus | CallResu
             credits_charged=data.get("credits_charged", 0),
         )
 
+    partial_raw: Optional[List[Dict[str, str]]] = data.get("partial_transcript")
+    partial_transcript: Optional[List[TranscriptTurn]] = None
+    if partial_raw is not None:
+        partial_transcript = [
+            TranscriptTurn(speaker=t.get("speaker", ""), text=t.get("text", ""))
+            for t in partial_raw
+        ]
+
     return CallStatus(
         call_id=data.get("call_id", ""),
         status=status,
         duration_seconds=data.get("duration_seconds"),
+        phase=data.get("phase"),
+        partial_transcript=partial_transcript,
     )
 
 

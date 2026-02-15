@@ -5,10 +5,12 @@ from .client import PineVoice
 from .exceptions import AuthError, CallError, PineVoiceError, RateLimitError
 from .types import (
     CallInitiated,
+    CallProgress,
     CallResult,
     CallStatus,
     Credentials,
     TranscriptEntry,
+    TranscriptTurn,
 )
 
 __all__ = [
@@ -21,6 +23,8 @@ __all__ = [
     "Credentials",
     "CallInitiated",
     "CallStatus",
+    "CallProgress",
     "CallResult",
     "TranscriptEntry",
+    "TranscriptTurn",
 ]

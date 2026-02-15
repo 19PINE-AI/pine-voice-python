@@ -232,6 +232,7 @@ Uses SSE streaming for real-time result delivery. If the SSE connection fails or
 |---|---|---|---|
 | `poll_interval` | `int` | `10` | Seconds between polling requests (fallback only) |
 | `use_sse` | `bool` | `True` | Try SSE streaming first. Set `False` to force polling. |
+| `on_progress` | `Callable[[CallProgress], None]` | `None` | Callback invoked with a `CallProgress` object whenever the call phase changes or a new transcript turn arrives. Only works when SSE streaming is available; during polling fallback, called after each poll cycle. |
 
 ## Supported countries
 
