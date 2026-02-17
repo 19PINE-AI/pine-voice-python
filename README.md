@@ -206,7 +206,7 @@ Initiate a call. Returns `CallInitiated(call_id, status)`.
 
 | Param | Type | Required | Description |
 |---|---|---|---|
-| `to` | `str` | Yes | Phone number in E.164 format. Supported countries: US/CA (+1), UK (+44), AU (+61), NZ (+64), IE (+353) |
+| `to` | `str` | Yes | Phone number in E.164 format. Supported countries: US/CA/PR (+1), UK (+44), AU (+61), NZ (+64), SG (+65), HK (+852), CN (+86, connection not guaranteed) |
 | `name` | `str` | Yes | Name of the person or business being called |
 | `context` | `str` | Yes | Background context about the callee and info needed during the call |
 | `objective` | `str` | Yes | Specific goal the call should accomplish |
@@ -238,11 +238,13 @@ Uses SSE to wait for the final call result. If the SSE connection fails or the s
 
 The voice agent can only speak English. Calls can be placed to the following countries:
 
-- US and Canada (+1)
+- US, Canada, and Puerto Rico (+1)
 - United Kingdom (+44)
 - Australia (+61)
 - New Zealand (+64)
-- Ireland (+353)
+- Singapore (+65)
+- Hong Kong (+852)
+- China (+86) — connection is not guaranteed; some numbers can be connected, but others cannot
 
 Calls to numbers outside these country codes will be rejected with a `POLICY_VIOLATION` error.
 
