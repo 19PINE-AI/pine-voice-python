@@ -9,7 +9,7 @@ Publishing uses OIDC-based trusted publishing — no PyPI tokens needed.
 1. Go to **pypi.org/manage/account/publishing/**
 2. Under **"Add a new pending publisher"**, fill in:
    - **PyPI project name**: `pine-voice`
-   - **Owner**: `RunVid`
+   - **Owner**: `19PINE-AI`
    - **Repository name**: `pine-voice-python`
    - **Workflow name**: `publish.yml`
    - **Environment name**: *(leave blank)*

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "pine-voice"
-version = "0.1.4"
+version = "0.1.5"
 description = "Official Pine AI Voice SDK — make phone calls via Pine's AI voice agent"
 readme = "README.md"
 license = "MIT"
@@ -26,5 +26,7 @@ classifiers = [
 dependencies = ["httpx>=0.24.0"]
 
 [project.urls]
-Homepage = "https://pineclaw.com"
+Homepage = "https://github.com/19PINE-AI/pine-voice-python"
+Repository = "https://github.com/19PINE-AI/pine-voice-python"
+Issues = "https://github.com/19PINE-AI/pine-voice-python/issues"
 Documentation = "https://pineclaw.com/api.html"
